@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+        <script src="{{ url_for('static', filename='index.js') }}"></script>
+        <title>Flack</title>
+    </head>
+    <body>
+        <form id="signit">
+        <input id="username" autocomplete="off" autofocus placeholder="Username" type="text">
+        <button type="submit">Sign it</button>
+    </form>
+        <div id="info"></div>
+    </body>
+</html>
