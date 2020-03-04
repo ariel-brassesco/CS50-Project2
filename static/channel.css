@@ -1,0 +1,172 @@
+.ch-temp {
+    animation: entrance 1s linear forwards;
+    cursor: default;
+}
+
+.ch-menu {
+    display: block;
+    background-color: lightgray;
+    padding-left: 5px;
+}
+
+.ch-menu h2 {
+    display: inline-block;
+}
+
+.btn-close, .ch-menu span {
+    float: right;
+    border: none;
+    background-color: inherit;
+}
+
+.ch-menu span {
+    transform: rotate(90deg);
+}
+
+.ch-menu span:hover {
+    transform: rotate(-90deg);
+}
+
+.ch-menu span:hover ~ div{
+    height: 40px;
+}
+
+.ch-menu div {
+    overflow: hidden;
+    height: 0;
+    transition: height linear 1s;
+}
+
+.ch-menu div h5 {
+    margin: 0;
+}
+
+.ch-menu div p {
+    margin: 0;
+    color: grey;
+    font-size: var(--font-size);
+}
+
+.ch-msg {
+    padding: var(--padding-offset);
+    position: relative;
+    overflow-y: scroll;
+    width: 100%;
+    max-height: 300px;
+}
+
+.ch-new-msg {
+    display: block;
+    margin-top: var(--margin-offset);
+    margin-bottom: var(--margin-offset);
+}
+
+.tool-msg {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    margin-left: var(--margin-offset);
+}
+
+.tool-msg span{
+    padding-left: var(--padding-offset);
+    font-size: var(--font-size);
+    width: 15px;
+}
+/*
+.tool-msg span:hover {
+    background-color: lightgrey;
+}*/
+/* CSS for menues */
+.menu-box {
+    position: relative;
+}
+
+.menu-tb {
+    display: none;
+    position: absolute;
+    flex-flow: row wrap;
+    justify-content: space-between;
+    z-index: 1;
+    margin: 1px;
+    border: 1px solid lightgray;
+    background-color: white;
+}
+
+.menu-item {
+    display: inline-block;
+    margin: 1px;
+}
+/* CSS for EMOJIS*/
+div.emoji_tb {
+    overflow-y: scroll;
+    overflow-x: hidden;
+    width: 95px;
+    height: 100px;
+    top: -100px;
+}
+
+.emoticon {
+    margin: 1px;
+    padding: var(--padding-offset);
+    text-align: center;
+    cursor: pointer;
+}
+
+/* CSS for attachments*/
+.attach_tb {
+    flex-wrap: nowrap;
+    margin: auto;
+    height: 20px;
+    top: -20px;
+}
+
+
+
+/* CSS Messega Send*/
+
+.ch-send-msg {
+    display: flex;
+}
+
+.msg-content {
+    display: block;
+    resize: none;
+    width: 100%;
+    min-height: 50px;
+    margin: var(--padding-offset);
+    font-size: var(--font-size);
+}
+
+.canvas {
+    display: none;
+    width: 100%;
+    min-height: 50px;
+    margin: var(--padding-offset);
+    font-size: var(--font-size);
+    border: 1px solid black;
+}
+
+.btn-send-msg {
+    font-size: var(--symbol-size);
+    border-radius: 5px;
+    max-height: calc(var(--font-size)*2);
+    margin: var(--padding-offset);
+}
+
+.file-preview {
+    height: var(--file-img-max-size);
+    margin-left: var(--margin-offset);
+}
+
+
+
+/*Animation for channel page*/
+@keyframes entrance{
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}

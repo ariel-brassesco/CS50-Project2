@@ -1,15 +1,245 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
-        <script src="{{ url_for('static', filename='index.js') }}"></script>
+    <head lang='en'>
+        <meta charset="utf-8"/>
+        <!-- Handlebars JS file -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.11/handlebars.min.js"></script>
+        
+        <!-- SocketIO JS file -->
+        <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.0/socket.io.js"></script>
+        
+        <!-- D3 library -->
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+
+
+        <!-- Handlebars template html script for message -->
+        <script id="temp-notification" type="text/x-handlebars-template">
+            {% raw -%}
+            <div>
+                {{#with notification}}
+                    {{#if invitation}}
+                    <p> {{ msg }}</p>
+                    <button name="ch-inv" data-type="ch-inv" data-res="yes" data-ch={{channel.[0]}} data-user={{user}} >&#x2714</button>
+                    <button name="ch-inv" data-type="ch-inv" data-res="no" data-ch={{channel.[0]}} data-user={{user}}>&#x274c</button>
+                    {{/if}}
+                    <p> {{ msg }}</p>
+                {{/with}}
+            </div>
+            {%- endraw %}
+        </script>
+
+        <!-- Handlebars template html script for message -->
+        <script id="temp-msg" type="text/x-handlebars-template">
+            <!--{% raw -%}-->
+            <div class="{{ class }} msg">
+                <img class="avatar-img" src={{msg.settings.avatar}}> 
+                <div>
+                    <h5>{{ msg.username }}</h5>
+                    <small>{{ msg.date.hours }}:{{ msg.date.minutes }}</small>
+                    {{#if text}}
+                        <p> {{ msg.content }}</p>
+                    {{else if image}}
+                    <div class="file-img">
+                    <img src={{msg.content.src}} alt="Image">
+                    </div>
+                    {{else}}
+                    <div class="file-img">
+                    <img src={{logo}} alt="File" data-type="{{msg.content.type}}" data-src={{msg.content.src}} name="user_file">
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+            <!--{%- endraw %}-->
+        </script>
+        
+        <!-- Handlebars template html script for preview attachments -->
+        <script id="temp-preview" type="text/x-handlebars-template">
+            {% raw -%}
+            <div class="msg preview">
+                <div ></div>
+                {{#with file}}
+                <div>
+                    <h5>{{ name }}</h5><br>
+                    <small>{{ size }}</small>
+                </div>
+                {{/with}}
+                <button class = "btn-close">&#x2718</button>
+            </div>
+            {%- endraw %}
+        </script>
+
+        <!-- Handlebars template html script for channel -->
+        <script id="temp-channel" type="text/x-handlebars-template">
+            {% raw -%}
+            {{#with channel}}
+            <div id="{{ id }}" class="ch-temp">
+                <div class="ch-menu">
+                    <h2>{{ name }}</h2><button class = "btn-close">&#x2718</button>
+                    <br><span>&#xff1e</span><br>
+                    <div>
+                        <h5>Propose</h5>
+                        <p>{{propose}}</p>
+                    </div>
+                </div>
+            {{/with}}
+            {%- endraw %}   
+                <div class="ch-msg"></div>
+                <div class="ch-new-msg">
+                    <div class='tool-msg'>
+                        <div class='emojis menu-box'><span class="btn-emoji">&#x263a</span></div>
+                        <span>T</span>
+                        <span class="btn-draw">&#x0270e</span>
+                        <div class="draw-tools"></div>
+                        <div class="file-attach menu-box">
+                            <span class="btn-attach">&#x1f4ce</span>
+                            <input type="file" accept="image/*" name="image" style="display: none;">
+                            <input type="file" accept=".pdf" name="pdf" style="display: none;">
+                            <input type="file" name="other" style="display: none;">
+                        </div>
+                    </div>
+                    <div class='ch-send-msg'>
+                        <textarea class='msg-content' autofocus></textarea>
+                        <svg class="canvas"></svg>
+                        <button class="btn-send-msg">Send</button>
+                    </div>
+                    <div class="file-preview"></div>
+                </div>
+            </div>
+        </script>
+
+        <!-- Handlebars template html script for channel creation -->
+        <script id="temp-create-ch" type="text/x-handlebars-template">
+            <div id="new-ch">
+                <input id="status-toggle" type="checkbox" name="ch_st" checked/>
+                <label class="switch" for="status-toggle">
+                    <span class="slider round"></span>
+                </label>
+                <div class="public-description description">
+                    <h4>Public</h4>
+                    <p>All users can send and receive messages.</p>
+                </div>
+                <div class="private-description description">
+                    <h4>Private</h4>
+                    <p>Private channels are invite-only, and do not show up in the channel list.</p>                
+                </div>
+                <hr>
+                <div class="name_chart">
+                    <span>Name</span>
+                    <div><span>&#x0023</span> <input type="text" name="ch_name"></div>
+                </div>
+                <small>*Names must be lowercase, without spaces or periods, 
+                    and can't be longer than 20 characters.</small>
+                <div class="add_users inactive">
+                    <h4>Add users</h4> <span>+</span>
+                    <input type="text" name="add_u"> 
+                    <small>Optional.</small>
+                    <ul id="finders"></ul>
+                    <div id="add_u_names"></div>
+                </div>
+                <hr>
+                <div class="ch_propose">
+                    <h4>Propose</h4>
+                    <textarea name="ch_propose" cols="100"></textarea><br>
+                    <small>Optional. A brief description of the channel goal.</small>
+                </div>
+                <hr>
+                <button class = "btn-close">Cancel</button>
+                <button class="btn-create-ch">Create</button>
+
+            </div>
+        </script>
+
+
+        <!-- Handlebars template html script for login -->
+        <script id="temp-login" type="text/x-handlebars-template">
+            <div class="flack">
+                <h1>flack</h1>
+                <svg id="presentation" style="height:200px;"></svg>
+            </div>
+            <div class="login">
+                    <div class="select-input">
+                        <input id="username" type="text" autofocus autocomplete="off" placeholder="Username">
+                        <br>
+                        <button type="submit">Submit</button>
+                    </div>
+                    <div id="select-avatar">
+                        {% raw -%}
+                        <img id="selected" class="avatar-img" src="../static/images/avatar/{{select}}">
+                        <div id="avatar">
+                            
+                            {{#each avatar}}
+                                <img class="avatar-img" src="../static/images/avatar/{{this}}">
+                            {{/each}}
+                        </div>
+                        {%- endraw %} 
+                    </div>
+            </div>
+        </script>
+        
+        
+        <!-- Handlebars template html script for profile -->
+        <script id="temp-profile" type="text/x-handlebars-template">
+            <div class="grid-header">
+            {% raw -%}                        
+                {{#with user}}
+                    <div>
+                    <img class="avatar-img" src= {{settings.avatar}}>
+                    <h2>{{ username }}</h2>
+                    <div id="notifications"><span>&#x1f514</span>
+                    <div class="noti"></div>
+                    </div>
+                    <span>&#x2699</span>
+                    </div>
+                    <button class="btn-logout">Logout</button>
+                {{/with}}
+            </div>
+
+            <div class="grid-nav">
+                {{#with user}}
+                <ul id="nav-list-ch">
+                    <li id="nav-ch-title" class='nav-title'>CHANNELS <span>+</span></li>
+                    {{#each channels }}
+                        <li id="{{ this.[0] }}" class="{{ this.[1] }} nav-channel" > {{ this.[0] }}</li>
+                    {{/each}}
+                </ul>
+                {{/with}}
+
+                {{#with user}}
+                <ul id="nav-list-users">
+                    <li class='nav-title'>USERS</li>
+                    {{#each users }}
+                        <li id="{{this}}" class="nav-user"> {{ this }}</li>
+                    {{/each}}
+                </ul>
+                {{/with}}
+            </div>
+            
+            <div class="grid-main"></div>
+            {%- endraw %}
+        </script>
+        
         <title>Flack</title>
+
+        <!-- CSS stylesheets -->
+        <link rel="stylesheet" type="text/css" href="/static/new_channel.css">
+        <link rel="stylesheet" type="text/css" href="/static/channel.css">
+        <link rel="stylesheet" type="text/css" href="/static/message.css">
+        <link rel="stylesheet" type="text/css" href="/static/login.css">
+        <link rel="stylesheet" type="text/css" href="/static/header.css">
+        <link rel="stylesheet" type="text/css" href="/static/index.css">
     </head>
+
     <body>
-        <form id="signit">
-        <input id="username" autocomplete="off" autofocus placeholder="Username" type="text">
-        <button type="submit">Sign it</button>
-    </form>
-        <div id="info"></div>
+        <div class="mainPage"></div>
     </body>
+        
+    <!-- My JS files -->
+    
+    <script type="text/javascript" src="/static/data.js"></script>
+    <script type="text/javascript" src="/static/channels.js"></script>
+    <script type="text/javascript" src="/static/socket_func.js"></script>
+    <script type="text/javascript" src="/static/utils.js"></script>
+    <script type="text/javascript" src="/static/presentation.js"></script>
+    <script type="text/javascript" src="/static/login.js"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='index.js') }}"></script>
 </html>

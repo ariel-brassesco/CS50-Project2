@@ -1,0 +1,131 @@
+:root {
+    --body-backgroun-color: rgb(228, 224, 224);
+    --body-text-color: white;
+    --body-margin: 0px;
+    --body-padding: 0px;
+
+    --header-background-color: rgb(98, 33, 184);
+    --nav-background-color: rgb(98, 33, 184);
+    --main-background-color: rgba(255, 255, 255, 0.952);
+
+    --nav-text-color: silver;
+    --main-text-color: black;
+
+    --avatar-size: 40px;
+    --file-img-max-size: 100px;
+    --padding-offset: 2px;
+    --margin-offset: 5px;
+    --font-size: 12px;
+
+    --symbol-size: 10px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--body-backgroun-color);
+    margin: var(--body-margin);
+    padding: var(--body-padding);
+    color: var(--body-text-color);
+}
+
+.mainPage {
+    display: -webkit-box;
+    display: -moz-grid;
+    display: grid;
+    
+    grid-template-areas:
+    "header header header"
+    "nav main ."
+    "nav main .";
+
+    grid-template-columns: 20% 50% 30%;
+
+    align-content: stretch;
+    justify-content: center;
+}
+
+.grid-header {
+    grid-area: header;
+    align-self: center;
+    justify-self: stretch;
+    background-color: var(--header-background-color);
+}
+
+.grid-main {
+    grid-area: main;
+    justify-self: stretch;
+    align-self: center;
+    background-color: var(--main-background-color);
+    color: var(--main-text-color);
+}
+
+.grid-nav {
+    grid-area: nav;
+    background-color: var(--nav-background-color);
+    color: var(--nav-text-color);
+}
+
+.grid-nav ul {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+#nav-ch-title span {
+    border: 1px solid grey;
+    border-radius: 40%;
+    padding: 0 5px 0 5px;
+    margin: 2px 20px 0 0;
+    font-size: 9px;
+    font-weight: bold;
+    float: right;
+    
+}
+#nav-ch-title span:hover {
+    border: 1px solid white;
+    color: white;
+}
+.nav-title {
+    margin-bottom: 5px;
+}
+
+.nav-title:hover {
+    background-color: rgb(189, 129, 245);
+}
+
+.nav-user, .nav-title, .nav-channel {
+    padding-left: 10px;
+    font-size: 15px;
+}
+
+.nav-user::before {
+    content: "\2022";
+    color: lightgreen;
+    font-size: 20px;
+}
+
+.nav-user:hover, .nav-channel:hover {
+    background-color: rgb(189, 129, 245);
+    color: white;
+}
+
+.public::before {
+    content: "\0023";
+    display: inline-block;
+    width: 20px;
+}
+
+.private::before {
+    content: "\1f512";
+    display: inline-block;
+    width: 20px;
+    font-size: 10px;
+}
+
+.inactive {
+    display: none;
+}

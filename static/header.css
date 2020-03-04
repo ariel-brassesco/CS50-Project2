@@ -1,0 +1,70 @@
+.grid-header div {
+    display: inline-flex;
+    align-items: center;
+    cursor: default;
+}
+
+.grid-header div *{
+    margin: var(--margin-offset);
+    padding: 0;
+}
+
+.grid-header div span{
+    font-size: var(--symbol-size);
+    margin: 0;
+    padding-left: var(--padding-offset);
+    padding-right: var(--padding-offset);
+    cursor: pointer;
+}
+
+#notifications {
+    position: relative;
+}
+
+div.noti {
+    position: absolute;
+    display: none;
+    overflow-y: scroll;
+    height: 100px;
+    flex-direction: column;
+    background-color: gray;
+    font-size: var(--font-size);
+    margin: 0;
+    top: 20px;
+    z-index: 1;
+}
+
+div.noti div {
+    display: block;
+    margin:0;
+    border: 1px solid black;
+    width: 200px;
+}
+
+div.noti div button{
+    background-color: inherit;
+    border: none;
+    color: green;
+}
+
+div.noti div button:hover{
+    opacity: 0.5;
+}
+
+.btn-logout {
+    float: right;
+    text-align: center;
+    width: auto;
+    margin: var(--margin-offset);
+    padding: 5px;
+    border-radius: 10px;
+    background-color: rgb(189, 129, 245);
+    border: 1px solid rgb(189, 129, 245);
+    font-size: var(--font-size);
+    font-weight: bold;
+}
+
+.btn-logout:hover {
+    opacity: 0.5;
+    cursor: pointer;
+}
