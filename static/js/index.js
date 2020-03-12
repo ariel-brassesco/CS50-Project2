@@ -38,8 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
         page.innerHTML = profile_template({'user': user_data});
         
         // When socket is connect, anounce the user and load the services
-        socket.on('connect', function(s) {
-            console.log(s);
+        socket.on('connect', function() {
             // Emit the event "submit user" and reload the page
             socket_event("submit user", {'username': user_data.username});
             

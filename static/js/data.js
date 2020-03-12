@@ -1,6 +1,7 @@
 'use strict';
-
+// Functions to manage the localStorage
 function getData(key) {
+    if (!localStorage.getItem(key)) return false;
     return JSON.parse(localStorage.getItem(key));
 }
 
@@ -18,6 +19,9 @@ function saveData(key, data) {
 function cleanData() {
     localStorage.clear();
 }
+
+
+// Functions to manage the data in localStorage
 
 function add_user(username) {    
     let user = getData('user');
@@ -80,27 +84,81 @@ function add_message(ch_data){
         saveData('private_channels', data);
     }
 }
-/*remove_ch(name) {
-    let data = JSON.parse(localStorage.getItem('user'));
-    let idx = -1;
 
-    data.channels.forEach(function (element, i) {
-        if (element[0] === name) {
-            idx = i;
+function del_message(msg_id, channel){
+    let key = (channel.status === 'public')?'public_channels':'private_channels';
+    let channels = getData(key);
+
+    for (let i=0; i < channels.length; i++){
+        if (channels[i].id === channel.id){
+            for (let j=0; j < channels[i].messages.length; j++){
+                if (channels[i].messages[j].id === msg_id) {
+                    channels[i].messages[j].state = false;
+                    saveData(key, channels);
+                    return;
+                }
+            }
         }
-    });
+    }
+}
 
-    if (idx >= 0) {
-        data.channels.splice(idx, 1);
-        localStorage.setItem('user', JSON.stringify(data));
+function remove_ch(id) {
+    let user = getData('user')
+    let channels = getData('private_channels');
+
+    for (let i=0; i < user.channels.length; i++) {
+        if (user.channels[i][2] === id) {
+            user.channels.splice(i, 1);
+            break;
+        }
     }
 
-}*/
+    for (let i=0; i < channels.length; i++) {
+        if (channels[i].id === id) {
+            channels.splice(i, 1);
+            break;
+        }
+    }
+        
+    saveData('user', user);
+    saveData('private_channels', channels);
+
+}
+
+function update_users_from_ch(id, users) {
+    let channels = getData('private_channels');
+
+    for (let i=0; i < channels.length; i++) {
+        if (channels[i].id === id) {
+            channels[i].users = users;
+            break;
+        }
+    }
+    saveData('private_channels', channels)
+}
 
 function add_notification(noti) {
     let user = getData('user');
     user.notifications.push(noti);
     saveData('user', user);
+}
+
+function getChannelById(id) {
+    var public_channels = getData('public_channels');
+    var private_channels = getData('private_channels');
+    let i;
+    
+    for (i=0; i < public_channels.length; i++) {
+        if (public_channels[i].id === id) {
+            return public_channels[i];
+        }
+    }
+    for (i=0; i < private_channels.length; i++) {
+        if (private_channels[i].id === id) {
+            return private_channels[i];
+        }
+    }
+    return -1;
 }
 
 function findChannelById(id) {
@@ -115,11 +173,23 @@ function findChannelById(id) {
     return -1;
 }
 
+function getSizeChat(id=false) {
+    
+    let ch_id = (!id)? getData('active_ch'):id;
+    var channel = getChannelById(ch_id);
+
+    return channel.messages.length;
+}
+
+
+// Functions to find Elements in the DOM
 function findElementByClass(e, cls) {
+    if (!e) return null;
+    
     var nodes = e.children;
     var find;
     var i;
-
+    
     for (i=0; i < nodes.length; i++) {
         if (nodes[i].classList.contains(cls)) {
             return nodes[i];
@@ -185,6 +255,8 @@ function findElementsByTag(e, tag) {
     return find;
 }
 
+// Functions to get info about files
+
 function getFileSize(file) {
     // Return the file size in bytes, KB or MB
     if (file.size <= 1024) {
@@ -233,17 +305,56 @@ function createFileLogo() {
             'other': '../static/images/previews/FILE_logo.png'};
 }
 
+
+// Functions to manage the message information
 function createDataMessage(message) {
     // Return the Data from message to make the template
     const img_src = createFileLogo();
     let user = getData('user');
-    
+
     return {'text': message.types === 'text',
             'image': message.types === 'image',
             'file': !(message.types === 'text' || message.types === 'image') ,
             'msg': message,
             'logo': img_src[message.types],
-            'class': (message.username === user.username)?'msg-own':'msg-other'};
+            'class': (message.username === user.username)?'msg-own':'msg-other',
+            'date': getLocalTime(message.date)};
+}
+
+function getLocalTime(date){
+    let time_zone = new Date().getTimezoneOffset();
+    let min, hours;
+    let dif_h = (time_zone >= 0)?Math.floor(time_zone/60):Math.ceil(time_zone/60);
+    let dif_min = time_zone%60;
+    
+    if (time_zone >= 0) {
+        if (date.minutes < dif_min){
+            min = 60 + date.minutes - dif_min;
+            hours = date.hours - dif_h - 1;
+        } else {
+            min = date.minutes - dif_min;
+            hours = date.hours - dif_h
+        }
+    } else{
+        if ((date.minutes - dif_min) >= 60){
+            min = date.minutes - dif_min - 60;
+            hours = date.hours - dif_h + 1;
+        } else {
+            min = date.minutes - dif_min;
+            hours = date.hours - dif_h
+        }
+    }
+
+    if (hours >= 24) {
+        hours = hours - 24;
+    }
+
+    if (hours < 0) {
+        hours = hours + 24;
+    }
+
+    return {'hours': (hours < 10)?"0" + hours:hours,
+            'minutes': (min < 10)?"0" + min:min};
 }
 
 function getDateTime() {
@@ -254,9 +365,90 @@ function getDateTime() {
             date: time.getUTCDate(),
             day: time.getUTCDay(),
             hours: time.getUTCHours(),
-            minutes: (time.getUTCMinutes() < 10)?"0"+time.getUTCMinutes():time.getUTCMinutes(),
+            minutes: time.getUTCMinutes(),
             seconds: time.getUTCSeconds(),
             miliseconds: time.getUTCMilliseconds()
-            //zone: time.getTimezoneOffset()
             };
+}
+
+function genMsgId(date) {
+    let date_val = Object.values(date);
+    date_val.push(Math.floor(Math.random()*1000000));
+    return Object.values(date).join('');
+}
+
+function findMsgById(id){
+    let public_ch = getData('public_channels');
+    let private_ch = getData('private_channels');
+
+    for (let i=0; i < public_ch.length; i++) {
+        for (let j=0; j < public_ch[i].messages.length; j++){
+            if(public_ch[i].messages[j].id === id){
+                return {'channel': public_ch[i].id,
+                        'message': public_ch[i].messages[j]};
+            }
+        }
+    }
+
+    for (let i=0; i < private_ch.length; i++) {
+        for (let j=0; j < private_ch[i].messages.length; j++){
+            if(private_ch[i].messages[j].id === id){
+                return {'channel': private_ch[i].id,
+                        'message': private_ch[i].messages[j]};
+            }
+        }
+    }
+
+    return false;
+}
+
+// Functions to manage counter notifications and non-read message
+function updateCounter(key) {
+    let counter = getData('counter');
+    if (!Object.keys(counter).includes(key)) {
+        counter[key] = 0;
+    }
+    ++counter[key];
+    saveData('counter', counter);
+}
+
+function resetCounter(key) {
+    if (!getData('counter')) var counter = {};
+    else var counter = getData('counter');
+
+    counter[key] = 0;
+    saveData('counter', counter);
+}
+
+function setCounterElements(id, key, reset=false){
+    let elem = document.getElementById(id);
+
+    if (!elem){
+        return;
+    }
+
+    let counter_elem = findElementByClass(elem, 'counter');
+    
+    if (reset) {
+        counter_elem.innerHTML = "";    
+    } else {
+        let counter = getData('counter');
+        if (!counter[key]) counter_elem.innerHTML = "";
+        else counter_elem.innerHTML = counter[key];
+    }
+}
+
+function checkInvitationNoti(check, user, channel){
+    let u = getData('user');
+    let n = u.notifications;
+
+    for (let i=0; i < n.length; i++) {
+        if (n[i].type === 'invitation' && n[i].user === user && n[i].channel === channel) {
+            n[i].check = check;
+            break;
+        }
+    }
+
+    u.notifications = n;
+    saveData('user', u);
 }

@@ -60,3 +60,20 @@ div.preview img{
     height: 100%;
     padding: var(--padding-offset);
 }
+
+div.msg-other.del-msg {
+    display: none;
+}
+
+.msg-own.del-msg {
+    visibility: hidden;
+    margin-right: var(--margin-offset);
+}
+
+.del-msg:hover {
+    opacity: 0.5;
+}
+
+.msg:hover .msg-own.del-msg{
+    visibility: visible;
+}

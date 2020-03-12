@@ -47,6 +47,18 @@ def del_to_channels(channels, username):
     for ch in channels:
         ch.del_user(username)
 
+def del_empty_channel(channels):
+    
+    empty = True
+    while empty:
+        empty = False
+        for ch in channels:
+            if len(ch.users) < 1:
+                channels.remove(ch)
+                empty = True
+
+
+
 # Check that a channel name is not already used
 def check_channel(ch_name, channels):
     for ch in channels:

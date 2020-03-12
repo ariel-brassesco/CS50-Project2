@@ -12,33 +12,51 @@ class User:
     def add_channel(self, channel):
         # Check if the channel already exist
         for ch in self.channels:
-            if ch == channel.name:
+            if ch[0] == channel.name:
                 return {False: "The channel is already in the list."}
         # Add the channel to the list
-        self.channels.append([channel.name, channel.status, channel.id, channel.propose])
+        self.channels.append([channel.name, channel.status, channel.id, channel.purpose])
+    
+    def del_channel(self, channel):
+        # Check if the channel already exist
+        for ch in self.channels:
+            if ch[0] == channel.name:
+                # Remove the channel
+                self.channels.remove(ch)
+                return True
+        return False
     
     def add_notification(self, notification):
         # Add the notification to the list
         self.notifications.append(notification)
+
+    def check_notification(self, res, u, ch, t='invitation'):
+        check = {'yes': '\u2714', 'no': '\u274c'}
+        
+        for n in self.notifications:
+            if (n['type'] == t and n['user'] == u and n['channel'][0] == ch):
+                n['check'] = check[res]
+                break
     
     def info(self):
         return json.loads(json.dumps(self, cls=FlackEncoder))
 
     def set_settings(self, **kargs):
         try:
-            for key, value in kargs:
+            for key, value in kargs.items():
                 self.settings[key] = value
-        except:
+        except Exception as e:
+            print(e)
             return False
         return True
         
 
 class Channel:
 
-    def __init__(self, name, status = "public", propose=""):
+    def __init__(self, name, status = "public", purpose=""):
         self.name = name
         self.id = 'ch-' + self.name
-        self.propose = propose
+        self.purpose = purpose
         self.status = status
         self.messages = []
         self.users = []
@@ -47,6 +65,10 @@ class Channel:
         return json.loads(json.dumps(self, cls=FlackEncoder))
 
     def add_message(self, message):
+        # Check the amount of messages
+        if len(self.messages) >= 100:
+            self.messages = self.messages[1:]
+
         if message.username in self.users:
             self.messages.append(message)
             return True
@@ -67,12 +89,21 @@ class Channel:
         except:
             return False
         return True
+    
+    def del_message(self, msg_id):
+        for msg in self.messages:
+            if msg.id == msg_id:
+                msg.state = False
+                return True
+        
+        return False
 
 class Message:
 
-    def __init__(self, user, content, date_time, state = True, types = 'text'):
+    def __init__(self, user, id_msg, content, date_time, state = True, types = 'text'):
         self.username = user.username
         self.settings = user.settings
+        self.id = id_msg
         self.content = content
         self.date = date_time
         self.state = state
@@ -80,10 +111,6 @@ class Message:
     
     def info(self):
         return json.loads(json.dumps(self, cls=FlackEncoder))
-    
-    def set_setting(self, **kargs):
-        for key in kargs:
-            self.settings[key] = kargs[key]
 
 
 # Define a subclass to Encode JSON
@@ -96,7 +123,9 @@ class FlackEncoder(json.JSONEncoder):
 
 
 def main():
-    pass
+    user = User('Ariel')
+    print(user.set_settings(avatar='hola'))
+    print(user.info())
 
 if __name__ == "__main__":
     main()

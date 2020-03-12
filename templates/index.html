@@ -2,11 +2,12 @@
 <html>
     <head lang='en'>
         <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         <!-- Handlebars JS file -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.11/handlebars.min.js"></script>
         
         <!-- SocketIO JS file -->
-        <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.0/socket.io.js"></script>
+        <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
         
         <!-- D3 library -->
         <script src="https://d3js.org/d3.v4.min.js"></script>
@@ -18,11 +19,16 @@
             <div>
                 {{#with notification}}
                     {{#if invitation}}
-                    <p> {{ msg }}</p>
-                    <button name="ch-inv" data-type="ch-inv" data-res="yes" data-ch={{channel.[0]}} data-user={{user}} >&#x2714</button>
-                    <button name="ch-inv" data-type="ch-inv" data-res="no" data-ch={{channel.[0]}} data-user={{user}}>&#x274c</button>
+                        <p> {{ msg }}</p>
+                        {{#if check }}
+                            <span>{{ check }}</span>
+                        {{else}}
+                            <button name="ch-inv" data-type="invitation" data-res="yes" data-ch={{channel}} data-user={{user}} >&#x2714</button>
+                            <button name="ch-inv" data-type="invitation" data-res="no" data-ch={{channel}} data-user={{user}}>&#x274c</button>
+                        {{/if}}
+                    {{else}}
+                        <p> {{ msg }}</p>
                     {{/if}}
-                    <p> {{ msg }}</p>
                 {{/with}}
             </div>
             {%- endraw %}
@@ -31,23 +37,28 @@
         <!-- Handlebars template html script for message -->
         <script id="temp-msg" type="text/x-handlebars-template">
             <!--{% raw -%}-->
-            <div class="{{ class }} msg">
+            <div class="{{ class }} msg" data-id={{msg.id}}>
                 <img class="avatar-img" src={{msg.settings.avatar}}> 
                 <div>
                     <h5>{{ msg.username }}</h5>
-                    <small>{{ msg.date.hours }}:{{ msg.date.minutes }}</small>
-                    {{#if text}}
-                        <p> {{ msg.content }}</p>
-                    {{else if image}}
-                    <div class="file-img">
-                    <img src={{msg.content.src}} alt="Image">
-                    </div>
+                    <small>{{ date.hours }}:{{ date.minutes }}</small>
+                    {{#if msg.state}}
+                        {{#if text}}
+                            <p> {{ msg.content }}</p>
+                        {{else if image}}
+                        <div class="file-img">
+                        <img src={{msg.content.src}} alt="Image">
+                        </div>
+                        {{else}}
+                        <div class="file-img">
+                        <img src={{logo}} alt="File" name="user_file" data-type="{{msg.content.type}}" data-src={{msg.content.src}}>
+                        </div>
+                        {{/if}}
+                        </div>
+                        <div class="{{ class }} del-msg" data-id={{msg.id}}>&#x00d7</div>
                     {{else}}
-                    <div class="file-img">
-                    <img src={{logo}} alt="File" data-type="{{msg.content.type}}" data-src={{msg.content.src}} name="user_file">
-                    </div>
+                        <p> &#x1f6c7 This message was deleted.</p>
                     {{/if}}
-                </div>
             </div>
             <!--{%- endraw %}-->
         </script>
@@ -67,29 +78,48 @@
             </div>
             {%- endraw %}
         </script>
+        
+        <!-- Handlebars template html script for channel header -->
+        <script id="temp-ch-header" type="text/x-handlebars-template">
+            {% raw -%}
+            <div class="ch-header">
+            {{#with channel}}
+            <div class="ch-header-block">
+                <h5>Purpose</h5>
+                <p>{{purpose}}</p>
+            </div>
+            {{/with}}
+            {{#if private}}
+                <div class="ch-header-block">
+                    <h5>USERS</h5><span class="ch-header-plus">+</span>
+                    <ul>
+                        {{#each channel.users}}
+                        <li>{{this}}</li>
+                        {{/each}}
+                    </ul>
+                    <h6 id="ch-btn-leave">Leave...</h6>
+                </div>
+            {{/if}}
+            </div>
+            
+            {%- endraw %}
+        </script>
 
         <!-- Handlebars template html script for channel -->
         <script id="temp-channel" type="text/x-handlebars-template">
             {% raw -%}
             {{#with channel}}
-            <div id="{{ id }}" class="ch-temp">
+            <div id="channel" class="ch-temp">
                 <div class="ch-menu">
-                    <h2>{{ name }}</h2><button class = "btn-close">&#x2718</button>
-                    <br><span>&#xff1e</span><br>
-                    <div>
-                        <h5>Propose</h5>
-                        <p>{{propose}}</p>
-                    </div>
+                    <h2 class={{status}}>{{ name }}</h2><button class = "btn-close">&#x2718</button>
+                    <span class="ch-header-hide">&#xff1e</span>
                 </div>
             {{/with}}
-            {%- endraw %}   
+            {%- endraw %}
                 <div class="ch-msg"></div>
                 <div class="ch-new-msg">
                     <div class='tool-msg'>
                         <div class='emojis menu-box'><span class="btn-emoji">&#x263a</span></div>
-                        <span>T</span>
-                        <span class="btn-draw">&#x0270e</span>
-                        <div class="draw-tools"></div>
                         <div class="file-attach menu-box">
                             <span class="btn-attach">&#x1f4ce</span>
                             <input type="file" accept="image/*" name="image" style="display: none;">
@@ -138,17 +168,16 @@
                 </div>
                 <hr>
                 <div class="ch_propose">
-                    <h4>Propose</h4>
+                    <h4>Purpose</h4>
                     <textarea name="ch_propose" cols="100"></textarea><br>
                     <small>Optional. A brief description of the channel goal.</small>
                 </div>
                 <hr>
-                <button class = "btn-close">Cancel</button>
+                <button class = "btn-close-create">Cancel</button>
                 <button class="btn-create-ch">Create</button>
 
             </div>
         </script>
-
 
         <!-- Handlebars template html script for login -->
         <script id="temp-login" type="text/x-handlebars-template">
@@ -175,8 +204,7 @@
                     </div>
             </div>
         </script>
-        
-        
+
         <!-- Handlebars template html script for profile -->
         <script id="temp-profile" type="text/x-handlebars-template">
             <div class="grid-header">
@@ -185,10 +213,11 @@
                     <div>
                     <img class="avatar-img" src= {{settings.avatar}}>
                     <h2>{{ username }}</h2>
-                    <div id="notifications"><span>&#x1f514</span>
+                    <div id="notifications">
+                        <span>&#x1f514</span>
+                        <span class="counter"></span>
                     <div class="noti"></div>
                     </div>
-                    <span>&#x2699</span>
                     </div>
                     <button class="btn-logout">Logout</button>
                 {{/with}}
@@ -199,7 +228,8 @@
                 <ul id="nav-list-ch">
                     <li id="nav-ch-title" class='nav-title'>CHANNELS <span>+</span></li>
                     {{#each channels }}
-                        <li id="{{ this.[0] }}" class="{{ this.[1] }} nav-channel" > {{ this.[0] }}</li>
+                        <li id="{{ this.[0] }}" class="{{ this.[1] }} nav-channel" > 
+                            {{ this.[0] }}<span class="counter"></span></li>
                     {{/each}}
                 </ul>
                 {{/with}}
@@ -221,12 +251,12 @@
         <title>Flack</title>
 
         <!-- CSS stylesheets -->
-        <link rel="stylesheet" type="text/css" href="/static/new_channel.css">
-        <link rel="stylesheet" type="text/css" href="/static/channel.css">
-        <link rel="stylesheet" type="text/css" href="/static/message.css">
-        <link rel="stylesheet" type="text/css" href="/static/login.css">
-        <link rel="stylesheet" type="text/css" href="/static/header.css">
-        <link rel="stylesheet" type="text/css" href="/static/index.css">
+        <link rel="stylesheet" type="text/css" href="/static/css/new_channel.css">
+        <link rel="stylesheet" type="text/css" href="/static/css/channel.css">
+        <link rel="stylesheet" type="text/css" href="/static/css/message.css">
+        <link rel="stylesheet" type="text/css" href="/static/css/login.css">
+        <link rel="stylesheet" type="text/css" href="/static/css/header.css">
+        <link rel="stylesheet" type="text/css" href="/static/css/index.css">
     </head>
 
     <body>
@@ -235,11 +265,11 @@
         
     <!-- My JS files -->
     
-    <script type="text/javascript" src="/static/data.js"></script>
-    <script type="text/javascript" src="/static/channels.js"></script>
-    <script type="text/javascript" src="/static/socket_func.js"></script>
-    <script type="text/javascript" src="/static/utils.js"></script>
-    <script type="text/javascript" src="/static/presentation.js"></script>
-    <script type="text/javascript" src="/static/login.js"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='index.js') }}"></script>
+    <script type="text/javascript" src="/static/js/data.js"></script>
+    <script type="text/javascript" src="/static/js/channels.js"></script>
+    <script type="text/javascript" src="/static/js/socket_func.js"></script>
+    <script type="text/javascript" src="/static/js/utils.js"></script>
+    <script type="text/javascript" src="/static/js/presentation.js"></script>
+    <script type="text/javascript" src="/static/js/login.js"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/index.js') }}"></script>
 </html>

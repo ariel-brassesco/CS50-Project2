@@ -1,4 +1,4 @@
-import os
+import os, shutil
 import requests
 from static.classes import User, Channel, Message
 from static import func as f
@@ -14,11 +14,19 @@ UPLOAD_FOLDER = "./static/images/uploads"
 MAX_SIZE_FILE = 16 * 1024 * 1024 # 16MB
 ALLOWED_EXTENSIONS = {'txt', 'odt','doc', 'docx', 'ods','xls', 'xlsx', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
+# Set some socketio params
+PING_TIMEOUT = 600
+PING_INTERVAL = 10
+
 app = Flask(__name__)
 app.config["SECRET_KEY"] = 'dfsdf)/94432(//$%#)'#os.getenv("SECRET_KEY")
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_SIZE_FILE
-socketio = SocketIO(app)
+socketio = SocketIO(app,
+                    ping_timeout=PING_TIMEOUT,
+                    ping_interval=PING_INTERVAL,
+                    cors_credentials=False,
+                    cors_allowed_origins=[])
 
 # Set global variables
 users = []
@@ -93,6 +101,8 @@ def logout():
     except:
         print('An error was ocurred during LOGOUT.')
         return {"success": False, "msg": "The user does not exist."}
+    # Delete the private channels without users
+    f.del_empty_channel(private_channels)
     
     print(f"{username} is logout.")
     # Send response
@@ -117,7 +127,10 @@ def upload_file():
             
             if file and f.allowed_file(file.filename, ALLOWED_EXTENSIONS):
                 filename = secure_filename(file.filename)
-                path = "/".join([app.config['UPLOAD_FOLDER'], channel, user])
+                if channel == 'avatar':
+                    path = "/".join([app.config['UPLOAD_FOLDER'], "../" + channel, user])
+                else:
+                    path = "/".join([app.config['UPLOAD_FOLDER'], channel, user])
 
                 if not os.path.exists(path):
                     print(path)
@@ -148,13 +161,10 @@ def announce_user(data):
     username = data['username']
     emit("announce user", {"username": username}, broadcast=True)
 
-
 @socketio.on("logout user")
 def announce_logout(data):
-    print(data)
     username = data['username']
     emit("announce logout", {"username": username}, broadcast=True)
-
 
 @socketio.on("new channel")
 def new_channel(data):
@@ -169,12 +179,12 @@ def new_channel(data):
         ch = Channel(*channel)
     except:
         print("The channel name is not valid.")
-        emit('add channel', {'success': False, 'msg': 'The channel name is not valid.'}, broadcast=False)
+        emit('add channel', {'success': False, 'user': user, 'msg': 'The channel name is not valid.'}, broadcast=True)
         return
 
     if not f.check_channel(channel[0], channels):
         print("The channel already exists.")
-        emit('add channel', {'success': False, 'msg': 'The channel already exist'}, broadcast=False)
+        emit('add channel', {'success': False, 'user': user,'msg': 'The channel already exist'}, broadcast=True)
         return
 
     res = {}
@@ -210,18 +220,7 @@ def new_channel(data):
         private_channels.append(ch)
 
         # Add the notification to users and Emit the Event
-        notification = {'user': user, 
-                        'channel': channel,
-                        'users': data['users'],
-                        'msg': f"{user} invite you to join to {channel[0]}.",
-                        'type': 'invitation',
-                        'invitation': True}
-
-        for item in data['users']:
-            f.add_notification(notification, item, users)
-
-        # Send a notification for users added
-        emit("notification", notification, broadcast=True)
+        invite_user({'user': user, 'channel': channel[0], 'users': data['users']})
 
     # Send the channel info
     res['channel'] = ch.info()
@@ -229,12 +228,66 @@ def new_channel(data):
     print(res)
     emit('add channel', res, broadcast=True)
 
+@socketio.on("remove channel")
+def remove_channel(data):
+    username = data['user']
+    channel = data['channel']
+
+    print(f'{username} wants to leave the channel: {channel["name"]}')
+
+    user = f.find_user(username, users)
+    ch = f.find_channel(channel['id'], private_channels)
+
+    if ch.del_user(username):
+        user.del_channel(ch)
+        print(f"{username} leaves {ch.name}")
+
+        if len(ch.users) == 0:
+            # Remove the uploads
+            print(f"Channel: {ch.name} will be delete.")
+            private_channels.remove(ch)
+            if os.path.exists(UPLOAD_FOLDER + '/' + ch.id):
+                shutil.rmtree(UPLOAD_FOLDER + '/' + ch.id)
+                print(f'Delete files form {UPLOAD_FOLDER + "/" + ch.id}.')
+        
+        emit('leave channel', {'user': username, 'channel': ch.info()}, broadcast=True)
+    
+@socketio.on("invite users")
+def invite_user(data):
+    user = data['user']
+    channel = data['channel']
+    other_users = data['users']
+    # Add the notification to users and Emit the Event
+    notification = {'user': user, 
+                    'channel': channel,
+                    'users': other_users,
+                    'msg': f"{user} invite you to join to {channel}.",
+                    'type': 'invitation',
+                    'invitation': True,
+                    'check': False}
+
+    for item in data['users']:
+        f.add_notification(notification, item, users)
+
+    # Send a notification for users invited
+    emit("notification", notification, broadcast=True)
+    
+    if len(other_users) > 0:
+        # Add the notification to user and Emit the Event
+        notification = {'users': [user],
+                        'msg': f"You invited {', '.join(other_users)} to {channel}.",
+                        'type': 'information'}
+        
+        f.add_notification(notification, user, users)
+
+        # Send a notification for users invited
+        emit("notification", notification, broadcast=True)
 
 @socketio.on("new message")
 def new_message(data):
     # Find the user and the channel
     user = f.find_user(data['user']['username'], users)
-    print(data)
+
     # Check that the channel exists
     channel = f.find_channel(data['channel'], public_channels)
     if not channel:
@@ -245,39 +298,56 @@ def new_message(data):
         emit('send message', {'success': False, 'msg': f'The channel: {data["channel"]} does not exist'}, broadcast=False)
     else:
         # Create the message from data
-        message = Message(user, data['content'], data['date'], data['state'], data['type'])
+        message = Message(user, data['id'], data['content'], data['date'], data['state'], data['type'])
 
         # Add the message to the channel
         channel.add_message(message)
         print(f'Sending message to channel: {channel.name}, {channel.id}.')
         emit('send message', {'success': True, 'message': message.info(), 'channel': channel.info()}, broadcast=True)
 
+@socketio.on("delete msg")
+def delet_msg(data):
+    ch_id = data['channel']
+    msg = data['message']
+
+    ch = f.find_channel(ch_id, public_channels)
+    if not ch:
+        ch = f.find_channel(ch_id, private_channels)
+    
+    if ch.del_message(msg['id']):
+        emit("delete message", {"success": True, "msg": msg['id'], 'channel': ch.info()}, broadcast=True)
+    else:
+        emit("delete message", {"success": False, "msg": "The message could not delete."}, broadcast=True)
 
 @socketio.on("notification")
 def notification(data):
-    user = data['username']
+    user = data['user']
     noti = data['response']
 
-    if noti['type'] == 'ch-inv':
+    if noti['type'] == 'invitation':
+        # Check the notification
+        u = f.find_user(user, users)
+        u.check_notification(noti['res'], noti['user'], noti['ch'])
+        print(noti)
         if noti['res'] == 'no':
             # Create the notification response
             notification = { 'users': [noti['user']],
-                        'msg': f"{user} reject your invitation to {noti['ch']}.",
+                        'msg': f"{user} rejected your invitation to {noti['ch']}.",
                         'type': 'information'}
             print(notification)
             f.add_notification(notification, noti['user'], users)
+
             # Send a notification
             emit("notification", notification, broadcast=True)
         else:
             # Add the user to the channel
-            u = f.find_user(user, users)
-            id_channel = 'ch-'+noti['ch']
+            id_channel = 'ch-'+ noti['ch']
             ch = f.find_channel(id_channel, private_channels)
             f.add_to_channel(private_channels, u, ch_name=noti['ch'])
             
             # Create the notification response
             notification = { 'users': [noti['user']],
-                        'msg': f"{user} accept your invitation to {noti['ch']}.",
+                        'msg': f"{user} accepted your invitation to {noti['ch']}.",
                         'type': 'information'}
             print(notification)
             f.add_notification(notification, noti['user'], users)
@@ -286,11 +356,39 @@ def notification(data):
 
             # Send the channel info
             res = {}
+            res['host'] = noti['user']
+            res['guess'] = user
             res['channel'] = ch.info()
-            res['success'] = True
-            print(res)        
-            emit('add channel', res, broadcast=True)
+            print(res)
+            emit('channel invitation', res, broadcast=True)
+    else:
+        # Add the notification to users and Emit the Event
+        notification = {'users': noti['users'],
+                        'msg': noti['msg'],
+                        'type': noti['type']}
 
+        for item in noti['users']:
+            f.add_notification(notification, item, users)
+
+        # Send a notification for users added
+        emit("notification", notification, broadcast=True)
+
+@socketio.on("profile img")
+def change_profile_img(data):
+    username = data['user']
+    image = data['image']
+    
+    try:
+        user = f.find_user(username, users)
+        user.set_settings(avatar=image['src'])
+        
+        emit('change img', {'success': True, 'image': image, 'user': username}, broadcast=True)
+    except:
+        emit('change img', {'success': False, 'msg': 'Could not load the image.', 'user': username}, broadcast=True)
+
+@socketio.on('disconnect')
+def disconnect():
+    print("User disconnecte")
 
 if __name__ == "__main__":
-    app.run(debug = True)
+    socketio.run(app, debug = True)

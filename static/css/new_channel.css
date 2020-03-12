@@ -154,7 +154,7 @@ input[name="add_u"] {
 
 #add_u_names span {
     color: white;
-    font-size: 12px;
+    font-size: var(--font-size);
     background-color: #2196F3;
     padding: 2px 5px;
     margin-right: 3px;;
@@ -199,5 +199,9 @@ textarea[name="ch_propose"] {
     width: 100%;
     min-height: 20px;
 }
+
+/* CSS for button create channel*/
+
+
 
 /* Finish CSS for New Channel Form*/

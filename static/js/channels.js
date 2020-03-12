@@ -8,39 +8,24 @@ function socket_event(e_name, data) {
     socket.emit(e_name, data);
 }
 
-// Close channel by ID
-function close_channel(ch_id) {
-    if(ch_id) {
-        let elem = document.getElementById(ch_id);
-        let btn_close = findElementByClass(elem, 'btn-close');
-        btn_close.click();
-    }
-}
-
 // Open channel by ID and load the events
 function open_channel(ch_id){
-    
-    // Check that the channel is hide
-    var channel = document.getElementById(ch_id);
+    // Check that the channel is not the active channel
     var active_ch = getData('active_ch');
     
-    if (!active_ch || (active_ch !== channel.id)) {
-        // Close the Active Channel.
-        close_channel(active_ch);
-        
-        // Set activate_ch = ch_id.
-        // and show the channel.
-        saveData('active_ch', channel.id);
-        channel.style.display = "block";
-        
+    if (!active_ch || (active_ch !== ch_id)) {
+        // Set activate_ch = ch_id and show the channel.
+        saveData('active_ch', ch_id);
+        // Reset the counter of non-read message
+        resetCounter(ch_id);
         // Load the elements of channel
-        var load_elem = (channel.id === 'new-ch')?load_create_elements: load_channel_elements;
-        load_elem(channel);
+        var load_elem = (ch_id === 'new-ch')?load_create_elements: load_channel_elements;
+        load_elem();
     };
 
 }
 
-// Close the menu
+// Close the menu when click outside
 function close_menu(target, e_click, e_target) {
     let type_display = ['none', ''];
     let match = (target === e_click) || (target === e_target);
@@ -48,6 +33,16 @@ function close_menu(target, e_click, e_target) {
     if (!match && !type_display.includes(e_target.style.display)) {
         e_click.click();
     }
+}
+
+// Scrolldown menu
+function scrolldown(elem){
+    if (elem.scrollTopMax){
+        elem.scrollTop = elem.scrollTopMax;
+    } else {
+        elem.scrollTop = elem.scrollHeight - elem.clientHeight;
+    }
+    
 }
 
 // Generate the emojis div element
@@ -103,6 +98,7 @@ function load_emojis(e_container, btn, emojis, e_write, display_type='flex', cls
     }
 }
 
+// Load attachment icons
 function load_attachment(e_container, btn, attach, display_type='flex', cls='menu-tb') {
     // Add the div emojis to html page
     attach.setAttribute('class', cls);
@@ -126,6 +122,7 @@ function load_attachment(e_container, btn, attach, display_type='flex', cls='men
     }
 }
 
+// Check the content in the textarea until send message
 function check_content(elem) {
     let text = elem.value;
     
@@ -142,62 +139,8 @@ function check_content(elem) {
     return true;
 }
 
-function generate_toolbar_draw(){
-    const elem = document.getElementById('draw-tools');
-    let btn_erase = document.createElement('button');
-    let btn_size = document.createElement('select');
-
-    btn_erase.setAttribute('id', 'erase-draw');
-    btn_erase.innerHTML = String.fromCodePoint(0x1f512);
-
-    for (let i=1; i <= 10; i++) {
-        let size = document.createElement('option');
-        if (i === 3) {
-            size.setAttribute('selected', true);
-        }
-        size.setAttribute('value', i);
-        size.innerHTML = i;
-
-        btn_size.append(size);
-    }
-
-    elem.append(btn_size);
-    elem.append(btn_erase);
-
-    return elem;
-}
-
-// Drawing function in SVG
-function svg_drawing() {
-    const svg = d3.select('.canvas');
-    let drawing = false;
-
-        function draw_point() {
-            if (!drawing)
-                return;
-
-            const coords = d3.mouse(this);
-
-            svg.append('circle')
-               .attr('cx', coords[0])
-               .attr('cy', coords[1])
-               .attr('r', 5)
-               .style('fill', 'black');
-        };
-
-        svg.on('mousedown', () => {
-            drawing = true;
-        });
-
-        svg.on('mouseup', () => {
-            drawing = false;
-        });
-
-        svg.on('mousemove', draw_point);
-}
-
+// Preview the file until send
 function preview_file(elem, ev) {
-    console.log(ev.target.files[0]);
     var file = ev.target.files[0];
     let type = checkFileType(file);
     let temp_preview = Handlebars.compile(document.getElementById('temp-preview').innerHTML);
@@ -236,7 +179,8 @@ function preview_file(elem, ev) {
         preview.innerHTML = "";};
 }
 
-function upload_file(input, ch_id, user, date){
+// Upload a file to server
+function upload_file(input, ch_id, user, date, msg_id){
 
     // Initialize new request
     const request = new XMLHttpRequest();
@@ -259,7 +203,7 @@ function upload_file(input, ch_id, user, date){
             file_info['src'] = data.src;
 
             socket_event("new message", {'channel': ch_id, 'user': user, 'content': file_info, 
-                        'date': date, 'state': true, 'type': type});
+                        'date': date, 'id': msg_id, 'state': true, 'type': type});
         } else {
             console.log(data.msg);
 
@@ -277,6 +221,7 @@ function upload_file(input, ch_id, user, date){
     return false;
 }
 
+// Dowload a file from server
 function download_file(file_info){
     console.log("Try to download File");
     const request = new XMLHttpRequest();
@@ -311,11 +256,25 @@ function download_file(file_info){
     return false;
 }
 
-function load_create_elements(elem) {
+
+// Functions to load a new channel form
+
+function load_create_ch() {
+    const channel_template = Handlebars.compile(document.getElementById('temp-create-ch').innerHTML);
+    const page = document.querySelector('.grid-main');
+    
+    // Render the channel_template
+    page.innerHTML = channel_template();
+    console.log("Channel Creation Loaded.");
+    return document.getElementById('new-ch');
+}
+
+function load_create_elements() {
     console.log("Loading elements of create channel.");
     // Define Buttons
+    const elem = load_create_ch();
     const btn_create = findElementByClass(elem, 'btn-create-ch');
-    const btn_close = findElementByClass(elem, 'btn-close');
+    const btn_close = findElementByClass(elem, 'btn-close-create');
     const i_name = document.querySelector('input[name=ch_name]');
     const check_st = document.querySelector('input[name=ch_st]');
     const add_user = document.querySelector('input[name=add_u]');
@@ -377,7 +336,6 @@ function load_create_elements(elem) {
                 u_find.append(el);
             });
         }
-        console.log(lst);
 
         // Add the click Event to the list of name to add
         Array.from(u_find.children).forEach( (e) => {            
@@ -406,11 +364,7 @@ function load_create_elements(elem) {
     
     // Add the Event to close
     function close_newch_form() {
-        console.log("Closing create form.");
-        // Switch to Public
-        if (!check_st.checked) check_st.click();
-
-        elem.style.display = 'none';
+        elem.parentElement.removeChild(elem);
         saveData('active_ch', false);
     };
 
@@ -435,8 +389,142 @@ function load_create_elements(elem) {
     };
 }
 
-function load_channel_elements(ch_elem) {
-    console.log("Loading elements of channel " + ch_elem.id);
+function load_message(elem, message) {
+    // Add the new message to the chat
+    const chat = findElementByClass(elem, 'ch-msg');
+    let data = createDataMessage(message);
+    const msg_template = Handlebars.compile(document.querySelector('#temp-msg').innerHTML);
+    
+    // Render the template
+    chat.innerHTML += msg_template(data);
+}
+
+function load_message_events() {
+    // Add event to download files
+    let btn_dw_file = document.getElementsByName('user_file');
+    for (let btn of btn_dw_file){
+        let file_info = {'src': btn.dataset.src,
+                        'type': btn.dataset.type};
+        console.log(btn);
+        btn.addEventListener('click', download_file.bind(null, file_info), false);
+    }
+    
+    // Add event to delete messages
+    let btn_del_msg = document.querySelectorAll('.msg-own.del-msg');
+    
+    for (let btn of btn_del_msg){
+        let id_msg = btn.dataset.id;
+        btn.addEventListener('click', socket_event.bind(null, 'delete msg', findMsgById(id_msg)), false);
+    }
+}
+
+// Load channel header
+function load_channel_header(channel){
+    const temp_header = Handlebars.compile(document.querySelector('#temp-ch-header').innerHTML);
+    const header = document.getElementsByClassName('ch-menu')[0];
+    let status = (channel.status === 'private')?true:false;
+
+    header.innerHTML += temp_header({'channel': channel, 'private': status});
+
+    // Add the event click to show the header
+    const btn_hide = document.getElementsByClassName('ch-header-hide')[0];
+    const ch_header = document.getElementsByClassName('ch-header')[0];
+
+    btn_hide.addEventListener('click', function() {
+        // Show the header
+        ch_header.classList.toggle('expanded');
+        // Rotate the btn_hide
+        this.classList.toggle('rotate');
+    }, false);
+
+    try{
+        const btn_plus = findElementByClass(ch_header, 'ch-header-plus');
+        btn_plus.onclick = function(e) {
+            if (!findElementByClass(ch_header, 'box-invite-users')) {
+                let user = getData('user');
+                let lst = user.users.filter( u => (!channel.users.includes(u)));
+                let box_elem = createBoxList(lst);
+                // Set the class for box and the position
+                box_elem.setAttribute('class', 'box-invite-users')
+                box_elem.style.left = e.layerX +'px';
+                box_elem.style.top = e.layerY +'px';
+                // Add the box to header
+                ch_header.appendChild(box_elem);
+
+                //Add the click event to list items
+                let li_users = findElementsByTag(findElementByClass(ch_header, 'box-invite-users').children[0], 'li');
+
+                li_users.forEach((e) => {
+                    e.addEventListener('click', function(){
+                        socket_event('invite users', {'user': user.username, 
+                                                    'channel': channel.name, 
+                                                    'users': [this.dataset.user]});
+                        }
+                    ,false);
+                });
+            }
+        };
+    } catch(error) {
+        //console.error(error);
+    }
+
+    function createBoxList(arr) {
+        let box = document.createElement('div');
+        let list_items = document.createElement('ul');
+        for (let i=0; i < arr.length; i++) {
+            let item = document.createElement('li');
+            item.setAttribute('data-user', arr[i]);
+            item.innerHTML = arr[i];
+            list_items.append(item);
+        }
+        box.appendChild(list_items);
+        box.style.position = 'absolute';
+
+        return box;
+    }
+
+}
+
+function load_channel(channel) {
+    const channel_template = Handlebars.compile(document.getElementById('temp-channel').innerHTML);
+    const page = document.querySelector('.grid-main');
+    
+    // Render the channel_template
+    page.innerHTML = channel_template({'channel': channel});
+    console.log("Channel Loaded.");
+    // Reset the counter non-read message
+    setCounterElements(channel.name, channel.id, true);
+    // Load the channel header
+    load_channel_header(channel);
+    // Load the message in channel
+    const channel_elem = document.getElementById('channel')
+
+    // Load the messages
+    let i;
+    for (i=0; i < channel.messages.length; i++){
+        load_message(channel_elem, channel.messages[i]);
+    }
+
+    // Add Messages Events
+    load_message_events();
+
+    console.log("Messages Loaded.");
+
+    return channel_elem;
+}
+
+function load_channel_elements() {
+    var active_ch = getData('active_ch');
+    var channel = getChannelById(active_ch);
+    
+    // Check that channel exists
+    if (channel === -1){
+        console.log("Error during loading channel.")
+        return
+    }
+
+    const ch_elem = load_channel(channel);
+    console.log("Loading elements of channel " + active_ch);
     // Main elments
     const menu = ch_elem.children[0];
     const ch_msg = ch_elem.children[1];
@@ -444,7 +532,6 @@ function load_channel_elements(ch_elem) {
 
     // Message write and draw related elements
     const msg_content = findElementByClass(new_msg, 'msg-content');
-    const svg_draw = findElementByClass(new_msg, 'canvas');
     
     // Emojis related elements
     const emo_tb = findElementByClass(new_msg, 'emojis');
@@ -456,6 +543,10 @@ function load_channel_elements(ch_elem) {
     const btn_attach = findElementByClass(new_msg, 'btn-attach');
     const attachment = generate_attachment();
     const inputs_attach = findElementsByTag(attach_tb, 'input');
+    
+    // Scrolldonw the chat
+    scrolldown(ch_msg);
+
 
     // Close and Send Message Buttons
     let btn_close = findElementByClass(menu, 'btn-close');
@@ -467,24 +558,23 @@ function load_channel_elements(ch_elem) {
     
     // Function to close channel
     function close_ch() {
-        console.log("Closing channel " + ch_elem.id);
-        ch_elem.style.display = 'none';
+        console.log("Closing channel " + active_ch);
+        ch_elem.parentElement.removeChild(ch_elem);
         saveData('active_ch', false);
     };
-    
+
     // Function to send message
     function send_ch_msg(e) {
-        e.preventDefault();
         e.stopPropagation();
 
         let user = getData('user');
         let date_time = getDateTime();
-
+        let msg_id = genMsgId(date_time);
         
         if (check_content(msg_content)){
-            console.log("Sending Message from channel " + ch_elem.id);
-            socket_event("new message", {'channel': ch_elem.id, 'user': user, 'content': msg_content.value, 
-                        'date': date_time, 'state': true, 'type': 'text'});
+            console.log("Sending Message from channel " + active_ch);
+            socket_event("new message", {'channel': active_ch, 'user': user, 'content': msg_content.value, 
+                        'date': date_time, 'id': msg_id, 'state': true, 'type': 'text'});
             // Reset the textarea
             msg_content.value = "";
         }
@@ -493,26 +583,29 @@ function load_channel_elements(ch_elem) {
 
             if (inputs_attach[i].files[0]){
                 console.log("Upload file: " + inputs_attach[i].files[0].name);
-                upload_file(inputs_attach[i], ch_elem.id, user, date_time);
-
+                upload_file(inputs_attach[i], active_ch, user, date_time, msg_id);
                 // Close preview
                 let preview = findElementByClass(ch_elem, 'file-preview');
                 let btn_close = findElementByClass(preview, 'btn-close')
                 btn_close.click();
-
             }
         }
 
+        // Close the emoji and attachment menues
+        emojis.style.display = 'none';
+        attachment.style.display = 'none';
     };
 
-    // Close menues when click outside
-    window.onclick = function(event) {
-        // Close the emoji menu when click outside
-        close_menu(event.target, btn_emoji, emojis);
-        // Close the draw menu when click outside
-        close_menu(event.target, btn_draw, svg_draw);
-        // Close the attachment files menu when click outside
-        close_menu(event.target, btn_attach, attachment);
+    // Add the event to leave the channel
+    try{
+        const btn_ch_leave = document.getElementById('ch-btn-leave');
+        btn_ch_leave.onclick = function() {
+            let user = getData('user');
+            socket_event("remove channel",{'user': user.username, 'channel': channel})
+            btn_close.click();
+        };
+    } catch(error) {
+        //console.error(error);
     }
 
     // Load the emojis table
@@ -521,24 +614,5 @@ function load_channel_elements(ch_elem) {
     load_attachment(attach_tb, btn_attach, attachment, 'flex', 'menu-tb attach_tb');
     // Add the event to preview when select a file
     inputs_attach.forEach((e) => {e.addEventListener('change', preview_file.bind(null, ch_elem), false)});
-
-    
-
-    // Add Events to drawing
-    const btn_draw = findElementByClass(new_msg, 'btn-draw');
-
-    btn_draw.onclick = function() {
-        if ((svg_draw.style.display === "") || (svg_draw.style.display === "none")) {
-            svg_draw.style.display = "block";
-            msg_content.style.display = "none";
-            msg_content.value = "";
-        } else {
-            svg_draw.style.display = "none";
-            msg_content.style.display = "block";
-            svg_draw.innerHTML = "";
-        }
-    };
-
-    svg_drawing();
 
 }

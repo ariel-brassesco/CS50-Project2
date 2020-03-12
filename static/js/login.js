@@ -81,6 +81,7 @@ function login() {
             saveData('public_channels', data.public_channels);
             saveData('private_channels', data.private_channels);
             saveData('active_ch', false);
+            saveData('counter', {'notifications': 0});
 
             return location.reload();
         
@@ -114,9 +115,14 @@ function logout() {
         const data = JSON.parse(request.responseText);
         // print the message in the console.log
         console.log(data.msg);
+        if (!data.success) {
+            cleanData();
+            return location.reload();
+        }
 
         // Emit the "logout user" and reload the page
         socket_event("logout user", {'username': u.username});
+        socket_event("disconnect");
         
         return false;
     }

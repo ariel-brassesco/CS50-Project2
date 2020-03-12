@@ -25,7 +25,8 @@ div.noti {
     position: absolute;
     display: none;
     overflow-y: scroll;
-    height: 100px;
+    height: auto;
+    max-height: 100px;
     flex-direction: column;
     background-color: gray;
     font-size: var(--font-size);

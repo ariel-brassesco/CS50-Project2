@@ -3,7 +3,9 @@
     cursor: default;
 }
 
+/* CSS for channel menu*/
 .ch-menu {
+    position: relative;
     display: block;
     background-color: lightgray;
     padding-left: 5px;
@@ -13,40 +15,112 @@
     display: inline-block;
 }
 
-.btn-close, .ch-menu span {
+.btn-close, .ch-header-hide {
     float: right;
     border: none;
     background-color: inherit;
 }
 
-.ch-menu span {
+.ch-header-hide {
     transform: rotate(90deg);
+    position: absolute;
+    font-size: var(--symbol-size);
+    margin:0;
+    padding: 0;
+    bottom: 0;
+    right: 1%;
+    cursor: pointer;
+    transition: transform 1s linear;
+    z-index: 1;
 }
-
-.ch-menu span:hover {
-    transform: rotate(-90deg);
-}
-
-.ch-menu span:hover ~ div{
-    height: 40px;
-}
-
-.ch-menu div {
+/* CSS for channel header*/
+.ch-header {
     overflow: hidden;
-    height: 0;
-    transition: height linear 1s;
+    position: relative;
+    height: auto;
+    max-height: 0px;
+    transition: max-height 1s ease-in-out;
 }
-
-.ch-menu div h5 {
+.ch-header-block h5 {
+    display: inline-block;
     margin: 0;
 }
 
-.ch-menu div p {
+.ch-header-block p {
     margin: 0;
+    margin-bottom: var(--margin-offset);
     color: grey;
     font-size: var(--font-size);
 }
 
+.ch-header-block ul {
+    list-style: none;
+    display: flex;
+    flex-direction: row;
+    margin-top: var(--margin-offset);
+    padding: var(--padding-offset);
+    font-size: var(--font-size);
+}
+
+.ch-header-block ul li {
+    margin: 0;
+    margin-right: var(--margin-offset);
+    display: inline-block;
+    padding: 2px 5px;
+    color: white;
+    font-size: var(--font-size);
+    background-color: #2196F3;
+    border-radius: 5px;
+}
+
+span.ch-header-plus {
+    display: inline-block;
+    margin-left: var(--margin-offset);
+    font-size: var(--symbol-size);
+    padding: 0 2px;
+    background-color:grey;
+    border-radius: 50%;
+}
+
+span.ch-header-plus:hover {
+    cursor: pointer;
+    background-color: #2196F3;
+}
+
+.ch-header-block h6 {
+    color: grey;
+    display: inline-block;
+    margin: 0;
+}
+
+.ch-header-block h6:hover {
+    color:black;
+    cursor: pointer;
+}
+
+.box-invite-users {
+    margin: 0;
+}
+
+.box-invite-users ul{
+    margin: 0 var(--margin-offset);
+    padding: 0;
+    width: 80px;
+    overflow-x: hidden;
+    list-style: none;
+    font-size: var(--font-size);
+    border: 1px solid black;
+    z-index: 1;
+}
+.box-invite-users ul li{
+    background-color: grey;
+    margin: 0;
+}
+
+.box-invite-users ul li:hover{
+    opacity: 0.5;
+}
+/* CSS for chat*/
 .ch-msg {
     padding: var(--padding-offset);
     position: relative;
@@ -120,8 +194,6 @@ div.emoji_tb {
     height: 20px;
     top: -20px;
 }
-
-
 
 /* CSS Messega Send*/
 

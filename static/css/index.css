@@ -15,9 +15,9 @@
     --file-img-max-size: 100px;
     --padding-offset: 2px;
     --margin-offset: 5px;
-    --font-size: 12px;
+    --font-size: 15px;
 
-    --symbol-size: 10px;
+    --symbol-size: 12px;
 }
 
 * {
@@ -123,9 +123,81 @@ body {
     content: "\1f512";
     display: inline-block;
     width: 20px;
-    font-size: 10px;
 }
 
+/* Counter notification and non-read Messages*/
+
+.counter {
+    color: white;
+    background-color: lightgreen;
+    border-radius: 50%;
+    margin-left: var(--margin-offset);
+    padding: 0 4px;
+}
+
+/* Generic classes for transitions*/
 .inactive {
     display: none;
+}
+
+.expanded {
+    max-height: 500px;
+}
+
+.rotate {
+    transform: rotate(-90deg);
+}
+
+@media (max-width: 1000px) {
+
+    .mainPage {
+        display: -webkit-box;
+        display: -moz-grid;
+        display: grid;
+        
+        grid-template-areas:
+        "header header"
+        "nav main"
+        "nav main";
+    
+        grid-template-columns: 30% 70%;
+    
+        align-content: stretch;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 700px) {
+
+    .mainPage {
+        display: -webkit-box;
+        display: -moz-grid;
+        display: grid;
+        
+        grid-template-areas:
+        "header"
+        "main";
+    
+        grid-template-columns: 100%;
+    
+        align-content: stretch;
+        justify-content: center;
+    }
+
+    .grid-nav {
+        position:absolute;
+        top: 50px;
+        left: 0;
+        background-color: var(--nav-background-color);
+        color: var(--nav-text-color);
+        z-index:1;
+        display: none;
+    }
+    .grid-nav:hover {
+        display:block;
+    }
+    
+    .grid-header:hover + .grid-nav{
+        display: block;
+    }
 }
