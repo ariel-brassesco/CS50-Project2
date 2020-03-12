@@ -19,7 +19,7 @@ PING_TIMEOUT = 600
 PING_INTERVAL = 10
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = 'dfsdf)/94432(//$%#)'#os.getenv("SECRET_KEY")
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_SIZE_FILE
 socketio = SocketIO(app,
@@ -386,9 +386,6 @@ def change_profile_img(data):
     except:
         emit('change img', {'success': False, 'msg': 'Could not load the image.', 'user': username}, broadcast=True)
 
-@socketio.on('disconnect')
-def disconnect():
-    print("User disconnecte")
 
 if __name__ == "__main__":
     socketio.run(app)
