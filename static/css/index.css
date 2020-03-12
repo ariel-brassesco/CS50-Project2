@@ -32,6 +32,7 @@ body {
 }
 
 .mainPage {
+    height: 100vh;
     display: -webkit-box;
     display: -moz-grid;
     display: grid;
@@ -42,6 +43,7 @@ body {
     "nav main .";
 
     grid-template-columns: 20% 50% 30%;
+    grid-template-rows: auto 1fr;
 
     align-content: stretch;
     justify-content: center;
@@ -60,6 +62,7 @@ body {
     align-self: center;
     background-color: var(--main-background-color);
     color: var(--main-text-color);
+    height: 100%;
 }
 
 .grid-nav {
