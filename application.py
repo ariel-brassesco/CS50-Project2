@@ -391,4 +391,4 @@ def disconnect():
     print("User disconnecte")
 
 if __name__ == "__main__":
-    socketio.run(app, debug = True)
+    socketio.run(app)
