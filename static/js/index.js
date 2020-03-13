@@ -54,7 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Render the Login Page
         let len_avatar = Object.keys(avatar).length;
         let select_avatar = avatar[random_avatar(len_avatar)];
-
+        //Hide the mainPage div
+        document.getElementsByClassName('mainPage')[0].style.display = 'none';
+        // Render the login template
         document.body.innerHTML += login_template({'select': select_avatar, "avatar": avatar});
         
         // Load the presentation animation
