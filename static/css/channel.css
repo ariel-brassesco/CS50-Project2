@@ -151,7 +151,7 @@ span.ch-header-plus:hover {
 .tool-msg span{
     padding-left: var(--padding-offset);
     font-size: var(--font-size);
-    width: 15px;
+    width: var(--symbol-size);
 }
 /*
 .tool-msg span:hover {
@@ -177,11 +177,15 @@ span.ch-header-plus:hover {
     display: inline-block;
     margin: 1px;
 }
+
+.menu-item img {
+    height: var(--symbol-size);
+}
 /* CSS for EMOJIS*/
 div.emoji_tb {
     overflow-y: scroll;
     overflow-x: hidden;
-    width: 95px;
+    width: calc(var(--symbol-size)*6);
     height: 100px;
     top: -100px;
 }
@@ -196,9 +200,14 @@ div.emoji_tb {
 /* CSS for attachments*/
 .attach_tb {
     flex-wrap: nowrap;
+    align-self: stretch;
     margin: auto;
-    height: 20px;
-    top: -20px;
+    height: auto;
+    top: -25px;
+}
+
+.btn-attach img {
+    height: var(--font-size);
 }
 
 /* CSS Messega Send*/
@@ -214,15 +223,6 @@ div.emoji_tb {
     min-height: 50px;
     margin: var(--padding-offset);
     font-size: var(--font-size);
-}
-
-.canvas {
-    display: none;
-    width: 100%;
-    min-height: 50px;
-    margin: var(--padding-offset);
-    font-size: var(--font-size);
-    border: 1px solid black;
 }
 
 .btn-send-msg {

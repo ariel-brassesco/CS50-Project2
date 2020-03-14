@@ -62,15 +62,23 @@ function generate_emojis(){
 
 // Generate the attanchment files div element
 function generate_attachment(){
-    let attach = ['\u{1f5bc}', '\u{1f5ba}', '\u{1f5b9}'];
+    //let attach = ['\u{1f5bc}', '\u{1f5ba}', '\u{1f5b9}'];
+    let attach = ['../static/images/attach-icons/picture-icon.png',
+                    '../static/images/attach-icons/pdf-icon.png',
+                    '../static/images/attach-icons/file-icon.png'];
     let attach_type = ['image', 'pdf', 'other'];
     const elem = document.createElement("div");
 
     for (let i=0; i<attach.length; i++){
         let el = document.createElement("span");
+        let img = document.createElement("img");
+        // Set the src of icon
+        img.setAttribute('src', attach[i]);
+        // Add the img to span element
         el.setAttribute('class', 'menu-item');
         el.dataset.type = attach_type[i];
-        el.innerHTML = attach[i];
+        //el.innerHTML = attach[i];
+        el.append(img);
         elem.append(el);
     }
     
@@ -405,7 +413,6 @@ function load_message_events() {
     for (let btn of btn_dw_file){
         let file_info = {'src': btn.dataset.src,
                         'type': btn.dataset.type};
-        console.log(btn);
         btn.addEventListener('click', download_file.bind(null, file_info), false);
     }
     

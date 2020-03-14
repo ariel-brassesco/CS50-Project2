@@ -281,16 +281,27 @@ function checkFileType(file){
     // Return the type of file
     let images = ['jpeg', 'jpg', 'png', 'gif'];
     let pdf = 'pdf';
-    let document = ['txt', 'doc', 'docx', 'xls', 'xlsx', 'plain' , 'msword',
-                    'vnd.openxmlformats-officedocument.wordprocessingml.document',
-                    'vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    'vnd.oasis.opendocument.text', 'vnd.oasis.opendocument.spreadsheet'];
+    let word = ['doc', 'docx', 'msword'];
+    let excel = ['xls', 'xlsx'];
+    let low = ['vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'vnd.oasis.opendocument.text'];
+    let loc = ['vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'vnd.oasis.opendocument.spreadsheet'];
+    let document = ['txt', 'plain'];
     let type = file.type.split('/')[1];
 
     if (type === pdf) {
         return 'pdf';
     } else if(images.includes(type)){
-        return 'image'
+        return 'image';
+    } else if (word.includes(type)){
+        return 'word';
+    } else if (excel.includes(type)){
+        return 'excel';
+    } else if (low.includes(type)){
+        return 'low';
+    } else if (loc.includes(type)){
+        return 'loc'
     } else if (document.includes(type)){
         return 'other';
     } else {
@@ -302,6 +313,10 @@ function checkFileType(file){
 function createFileLogo() {
     // Return the source address for logos
     return {'pdf': '../static/images/previews/PDF_logo.png',
+            'word': '../static/images/previews/WORD_logo.png',
+            'low': '../static/images/previews/LOW_logo.png',
+            'excel': '../static/images/previews/EXCEL_logo.png',
+            'loc': '../static/images/previews/LOC_logo.png',
             'other': '../static/images/previews/FILE_logo.png'};
 }
 
