@@ -1,18 +1,22 @@
 import os, shutil
-import requests
+from time import time
 from static.classes import User, Channel, Message
 from static import func as f
 
-from flask import Flask, request, jsonify, render_template, send_file
+from flask import Flask, request, jsonify, render_template, send_file, redirect, url_for
 from flask_socketio import SocketIO, emit
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import RequestEntityTooLarge
 
 
-# Set the UPLOAD FOLDER
+# Set some folders
+AVATAR_FOLDER = "./static/images/avatar"
 UPLOAD_FOLDER = "./static/images/uploads"
 MAX_SIZE_FILE = 16 * 1024 * 1024 # 16MB
 ALLOWED_EXTENSIONS = {'txt', 'odt','doc', 'docx', 'ods','xls', 'xlsx', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
+
+#Set some variables
+TIME_TO_FORCE_LOGOUT = 24 * 3600
 
 # Set some socketio params
 PING_TIMEOUT = 600
@@ -34,15 +38,16 @@ public_channels = []
 private_channels = []
 
 # Create some users for test
-user1 = User("Ariel", settings={"color": "blue"})
-user2 = User("Pedro", settings={"color": "black"})
-user3 = User("Tomas", settings={"color": "black"})
+user1 = User("Ariel")
+user2 = User("Pedro")
+user3 = User("Tomas")
 users.extend([user1, user2, user3])
 
 # Create some channels for test
 ch_public = Channel("general", "public", "A default chat for everyone.")
 ch_private = Channel("tut", "private", "My first private chat room.")
-#ch_direct = Channel("Pedro", "direct")
+
+# Add the channels to global varaibles
 public_channels.append(ch_public)
 private_channels.append(ch_private)
 
@@ -67,6 +72,8 @@ def new_user():
     
     # Generate the User
     user = User(username, settings={'avatar': avatar})
+    user.last_active = time()
+
     # Add the publics to Channels to User
     f.add_to_channel(public_channels, user, ch_name=False)
     # Add the User to users list
@@ -92,7 +99,7 @@ def new_user():
 def logout():
 
     username = request.form.get('username')
-
+    
     try:
         if not f.delete_user(username, users):
             raise Exception("The user does not exist.")
@@ -100,7 +107,12 @@ def logout():
         f.del_to_channels(private_channels, username)
     except:
         print('An error was ocurred during LOGOUT.')
+        # Delete the files
+        delete_files(username)
         return {"success": False, "msg": "The user does not exist."}
+    # Delete the files
+    delete_files(username)
+    
     # Delete the private channels without users
     f.del_empty_channel(private_channels)
     
@@ -115,6 +127,10 @@ def upload_file():
         try:
             user = request.form.get('username')
             channel = request.form.get('channel')
+
+            # Check the user exist
+            if force_logout(user):
+                return
 
             if 'file' not in request.files:
                 return jsonify({'success': False, 'msg': 'No file part.'})
@@ -171,9 +187,14 @@ def new_channel(data):
     user = data['username']
     channel = data['channel']
     
+    # Check the user exist
+    if force_logout(user):
+        return
+
+    # Create a list of channels
     channels = public_channels.copy()
     channels.extend(private_channels)
-    
+
     # Try to Create the New Channel
     try:
         ch = Channel(*channel)
@@ -233,6 +254,10 @@ def remove_channel(data):
     username = data['user']
     channel = data['channel']
 
+    # Check the user exist
+    if force_logout(username):
+        return
+
     print(f'{username} wants to leave the channel: {channel["name"]}')
 
     user = f.find_user(username, users)
@@ -257,6 +282,11 @@ def invite_user(data):
     user = data['user']
     channel = data['channel']
     other_users = data['users']
+
+    # Check the user exist
+    if force_logout(user):
+        return
+
     # Add the notification to users and Emit the Event
     notification = {'user': user, 
                     'channel': channel,
@@ -285,9 +315,11 @@ def invite_user(data):
 
 @socketio.on("new message")
 def new_message(data):
+    # Check if user exist
+    if force_logout(data['user']['username']):
+        return
     # Find the user and the channel
     user = f.find_user(data['user']['username'], users)
-
     # Check that the channel exists
     channel = f.find_channel(data['channel'], public_channels)
     if not channel:
@@ -306,7 +338,7 @@ def new_message(data):
         emit('send message', {'success': True, 'message': message.info(), 'channel': channel.info()}, broadcast=True)
 
 @socketio.on("delete msg")
-def delet_msg(data):
+def delete_msg(data):
     ch_id = data['channel']
     msg = data['message']
 
@@ -323,6 +355,10 @@ def delet_msg(data):
 def notification(data):
     user = data['user']
     noti = data['response']
+
+    # Check user exist:
+    if force_logout(user):
+        return
 
     if noti['type'] == 'invitation':
         # Check the notification
@@ -378,6 +414,9 @@ def change_profile_img(data):
     username = data['user']
     image = data['image']
     
+    if force_logout(username):
+            return
+
     try:
         user = f.find_user(username, users)
         user.set_settings(avatar=image['src'])
@@ -385,6 +424,83 @@ def change_profile_img(data):
         emit('change img', {'success': True, 'image': image, 'user': username}, broadcast=True)
     except:
         emit('change img', {'success': False, 'msg': 'Could not load the image.', 'user': username}, broadcast=True)
+
+@socketio.on("update user")
+def update_user(data):
+    username = data['username']
+
+    if force_logout(username):
+        return
+    
+    user = f.find_user(username, users)
+    user.last_active = time()
+
+    # Create a dict to response
+    ch_public = []
+    ch_private = []
+    
+    for ch in public_channels:
+        ch_public.append(ch.info())
+    
+    for ch in private_channels:
+        if username in ch.users:
+            ch_private.append(ch.info())
+
+    res_user = user.info()
+    res_user['users'] = f.users_list(users, user)
+    # Send response
+    emit('update user', {'success': True,
+                        'user': res_user, 
+                        'public_channels': ch_public, 
+                        'private_channels': ch_private}, broadcast=True)
+
+def force_logout(username):
+    u = f.find_user(username, users)
+    if not u:
+        print(f'{username} does not exists. Logout.')
+        delete_files(username)
+        emit('force logout', {'user': username, 'url': url_for('index')}, broadcast=True)
+        return True
+    else:
+        last_active = time() - u.last_active
+
+        if last_active > TIME_TO_FORCE_LOGOUT:
+            print(f'{username} will be Logout.')
+
+            f.delete_user(username, users)
+            f.del_to_channels(public_channels, username)
+            f.del_to_channels(private_channels, username)
+            # Delete the files
+            delete_files(username)
+            # Delete the private channels without users
+            f.del_empty_channel(private_channels)
+            # Announce the logout user
+            announce_logout({'username': username})
+            return True
+        u.last_active = time()
+
+    return False 
+
+def delete_files(username):
+    
+    ch_dir = []
+
+    # Delete avatar pictures uploaded by username
+    with os.scandir(AVATAR_FOLDER) as it:
+        for entry in it:
+            if entry.is_dir() and (entry.name == username):
+                shutil.rmtree(AVATAR_FOLDER + '/' + username)
+    
+    # Find the folder names inside UPLOAD_FOLDER
+    with os.scandir(UPLOAD_FOLDER) as it:
+        ch_dir = ['/'.join([UPLOAD_FOLDER, entry.name]) for entry in it if entry.is_dir()]
+    
+    # Delete the files uploaded by username
+    for folder in ch_dir:
+        with os.scandir(folder) as it:
+            for entry in it:
+                if entry.is_dir() and (entry.name == username):
+                    shutil.rmtree(folder + '/' + username)
 
 
 if __name__ == "__main__":

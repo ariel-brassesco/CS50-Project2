@@ -185,6 +185,8 @@ function loadSocketEvents() {
     
     // Chequear el username como ID.
     socket.on('announce logout', socket_announce_logout, false);
+
+    socket.on('force logout', socket_force_logout, false);
     
     // Add a new Channel
     socket.on('add channel', socket_add_channel, false);
@@ -206,4 +208,6 @@ function loadSocketEvents() {
 
     // Change Profile Image
     socket.on('change img', socket_change_profile_image, false);
+
+    socket.on('update user', socket_update_user, false);
 }

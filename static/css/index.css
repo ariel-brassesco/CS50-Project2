@@ -17,7 +17,8 @@
     --margin-offset: 5px;
     --font-size: 15px;
 
-    --symbol-size: 20px;
+    --symbol-size-1: 20px;
+    --symbol-size-2: 10px;
 }
 
 * {

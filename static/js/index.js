@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Get the user data from localStore
         let user_data = getData('user');
-        //user.getUser(user_data);
+        let time_conection = new Date();
         
         // Load the profile template
         page.innerHTML = profile_template({'user': user_data});
@@ -41,6 +41,9 @@ document.addEventListener('DOMContentLoaded', () => {
         socket.on('connect', function() {
             // Emit the event "submit user" and reload the page
             socket_event("submit user", {'username': user_data.username});
+            if ((time_conection.getTime()/1000 - user_data.last_active) > 20) {
+                socket_event("update user", {'username': user_data.username});
+            }
             
             // Load the profile elements and Events related
             loadServices();

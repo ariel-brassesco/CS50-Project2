@@ -5,7 +5,8 @@ class User:
     def __init__(self, username, settings = {}):
         self.username = username
         self.settings = settings
-        self.active_ch = False 
+        self.active_ch = False
+        self.last_active = 0
         self.channels = []
         self.notifications = []
 
@@ -50,7 +51,6 @@ class User:
             return False
         return True
         
-
 class Channel:
 
     def __init__(self, name, status = "public", purpose=""):
@@ -112,7 +112,6 @@ class Message:
     def info(self):
         return json.loads(json.dumps(self, cls=FlackEncoder))
 
-
 # Define a subclass to Encode JSON
 class FlackEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -123,9 +122,9 @@ class FlackEncoder(json.JSONEncoder):
 
 
 def main():
-    user = User('Ariel')
-    print(user.set_settings(avatar='hola'))
-    print(user.info())
+    # Implement for testing
+    pass
+
 
 if __name__ == "__main__":
     main()

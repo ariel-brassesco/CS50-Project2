@@ -122,7 +122,6 @@ function logout() {
 
         // Emit the "logout user" and reload the page
         socket_event("logout user", {'username': u.username});
-        socket_event("disconnect");
         
         return false;
     }

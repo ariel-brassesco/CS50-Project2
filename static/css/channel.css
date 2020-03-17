@@ -28,7 +28,7 @@
 .ch-header-hide {
     transform: rotate(90deg);
     position: absolute;
-    font-size: var(--symbol-size);
+    font-size: var(--symbol-size-2);
     margin:0;
     padding: 0;
     bottom: 0;
@@ -80,7 +80,7 @@
 span.ch-header-plus {
     display: inline-block;
     margin-left: var(--margin-offset);
-    font-size: var(--symbol-size);
+    font-size: var(--symbol-size-2);
     padding: 0 2px;
     background-color:grey;
     border-radius: 50%;
@@ -151,7 +151,7 @@ span.ch-header-plus:hover {
 .tool-msg span{
     padding-left: var(--padding-offset);
     font-size: var(--font-size);
-    width: var(--symbol-size);
+    width: var(--symbol-size-1);
 }
 /*
 .tool-msg span:hover {
@@ -179,13 +179,13 @@ span.ch-header-plus:hover {
 }
 
 .menu-item img {
-    height: var(--symbol-size);
+    height: var(--symbol-size-1);
 }
 /* CSS for EMOJIS*/
 div.emoji_tb {
     overflow-y: scroll;
     overflow-x: hidden;
-    width: calc(var(--symbol-size)*6);
+    width: calc(var(--symbol-size-1)*6);
     height: 100px;
     top: -100px;
 }
@@ -226,7 +226,7 @@ div.emoji_tb {
 }
 
 .btn-send-msg {
-    font-size: var(--symbol-size);
+    font-size: var(--symbol-size-1);
     border-radius: 5px;
     max-height: calc(var(--font-size)*2);
     margin: var(--padding-offset);

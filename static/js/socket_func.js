@@ -35,6 +35,16 @@ function socket_announce_logout(data) {
     console.log(data.username + " logging out.");
 }
 
+// Force Logout
+function socket_force_logout(data) {
+    let user = getData('user');
+    console.log(data)
+    if (data.user === user.username){
+        cleanData();
+        window.location = data.url;
+    }
+}
+
 // Add a new Channel
 function socket_add_channel(data) {
     console.log('add channel Event');
@@ -243,5 +253,20 @@ function socket_change_profile_image(data){
         }
     } else{
         console.log(data.msg);
+    }
+}
+
+// Update user
+function socket_update_user(data){
+    console.log('Update user info');
+    
+    if (data.success){
+        let user = getData('user')
+        if (user.username === data.user.username) {
+            saveData('user', data.user);
+            saveData('public_channels', data.public_channels);
+            saveData('private_channels', data.private_channels);
+            location.reload();
+        }
     }
 }
