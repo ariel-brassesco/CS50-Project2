@@ -1,5 +1,6 @@
 import os, shutil
 from time import time
+import requests
 from static.classes import User, Channel, Message
 from static import func as f
 

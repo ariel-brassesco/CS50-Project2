@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
         socket.on('connect', function() {
             // Emit the event "submit user" and reload the page
             socket_event("submit user", {'username': user_data.username});
-            if ((time_conection.getTime()/1000 - user_data.last_active) > 20) {
+            if ((time_conection.getTime()/1000 - user_data.last_active) > 1800) {
                 socket_event("update user", {'username': user_data.username});
             }
             
