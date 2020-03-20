@@ -110,7 +110,7 @@ def logout():
         print('An error was ocurred during LOGOUT.')
         # Delete the files
         delete_files(username)
-        return {"success": False, "msg": "The user does not exist."}
+        return jsonify({"success": False, "msg": "The user does not exist."})
     # Delete the files
     delete_files(username)
     
@@ -119,7 +119,7 @@ def logout():
     
     print(f"{username} is logout.")
     # Send response
-    return {"success": True, "msg": "Success logout"}
+    return jsonify({"success": True, "msg": "Success logout"})
 
 @app.route('/uploads', methods=['POST'])
 def upload_file():
